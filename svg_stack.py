@@ -201,9 +201,18 @@ class SVGFileBase(object):
         if self._root.tag != '{http://www.w3.org/2000/svg}svg':
             raise ValueError('expected file to have root element <svg:svg>')
 
-        self._width_px = convert_to_pixels(*get_unit_attr(self._root.get('width')))
-        self._height_px = convert_to_pixels(*get_unit_attr(self._root.get('height')))
-        log.debug("Size of {} is {:.2f} x {:.2f} px".format(fname, self._width_px, self._height_px))
+        if 'height' in self._root.keys():
+            height, height_units = get_unit_attr(self._root.get('height'))
+            width, width_units = get_unit_attr(self._root.get('width'))
+        else:
+            # R svglite does not set the height and width attributes. Get them from the viewBox attribute.
+            vbox = self._root.get('viewBox')
+            _, _, width, height = vbox.split(' ')
+            width =  float(width)
+            height = float(height)
+            width_units = height_units = 'px' # The default
+        self._width_px = convert_to_pixels( width, width_units)
+        self._height_px = convert_to_pixels( height, height_units)
         self._orig_width_px = self._width_px
         self._orig_height_px = self._height_px
         self._coord = None # unassigned
